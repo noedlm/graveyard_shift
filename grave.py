@@ -35,9 +35,11 @@ class Sprite:
         # SH counter
         self.counter = 0
         self.limit = 5
-        walkD = ""
-        
+        self.walkD = ""
+
         self.charType = char
+        self.immune_timer = 1200
+        self.immune = False
         self.life = 3
         self.attackT = -1
         self.attackD = "z"
@@ -141,26 +143,31 @@ class Sprite:
                                 self.counter += 1
                             else:
                                 self.life -= 1
+                                self.immune = True
                         elif self.attackD == "d":
                             if y1+h1-(h1/2) > y2 and y1+h1-(h1/2) < y2+h2 or y1+h1 > y2 and y1+h1 < y2+h2:
                                 zombies.remove(sp)
                                 self.counter += 1
                             else:
                                 self.life -= 1
+                                self.immune = True
                         elif self.attackD == "l":
                             if x1 > x2 and x1 < x2+w2 or x1+(w1/2) > x2 and x1+(w1/2) < x2+w2:
                                 zombies.remove(sp)
                                 self.counter += 1
                             else:
                                 self.life -= 1
+                                self.immune = True
                         elif self.attackD == "u":
                             if y1 > y2 and y1 < y2+h2 or y1+(h1/2) > y2 and y1+(h1/2) < y2+h2:
                                 zombies.remove(sp)
                                 self.counter += 1
                             else:
                                 self.life -= 1
+                                self.immune = True
                     else:
                         self.life -= 1
+                        self.immune = True
                 elif char == 2:
                     sp.pos.x -= sp.tgt.x/10 * tick
                     sp.pos.y -= sp.tgt.y/10 * tick
@@ -174,12 +181,12 @@ class Sprite:
     def update(self, char, tick, SH):
 
         # upper and lower boundary
-        if self.img.get_height()+ self.pos.y > HEIGHT:
+        if self.img.get_height() + self.pos.y > HEIGHT:
             self.pos.y = HEIGHT - self.img.get_height()
             self.vel.y = 0
         elif self.pos.y < 0:
             self.pos.y = 0
-            self.vel.y=0
+            self.vel.y = 0
 
         # right and left boundary
         if self.img.get_width() + self.pos.x > WIDTH:
@@ -255,7 +262,7 @@ class Vector2d:
 
 
 # main character
-MC = Sprite ("images/Undertaker_walkRight.gif", 1)
+MC = Sprite("images/Undertaker_walkRight.gif", 1)
 
 # some zombies
 zombies = []
@@ -298,7 +305,7 @@ while MC.life >= 0:
             zombies.append(Sprite("images/zombie.gif", 2))
         ztime = 0
     else:
-        ztime = ztime + tick
+        ztime += tick
     
     # time limit in attack
     if MC.attackT < 0:
@@ -312,19 +319,19 @@ while MC.life >= 0:
         MC.attackT = MC.attackT - tick
 
     # time limit on sink hole
-    if SH.timeLeft > 1500:
+    if SH.timeLeft > 2000:
         SH.active = False
         SH.pos.x = -50
         SH.pos.y = -50
     else:
-        SH.timeLeft = SH.timeLeft + tick
+        SH.timeLeft += tick
     
     # zombies on fire, this is when they die
     for z in zombies:
         if z.fTimer <= 0 and z.onFire:
             ztmp = z.pos
             zombies.remove(z)
-            f = Sprite( "images/fire.gif", 4 )
+            f = Sprite("images/fire.gif", 4)
             f.pos = ztmp
             fire.append(f)
         elif z.onFire:
@@ -370,7 +377,7 @@ while MC.life >= 0:
                 elif MC.walkD == "r":
                     SH.pos.x = MC.pos.x + 200
                     SH.pos.y = MC.pos.y
-                elif MC.walkD == "u" :
+                elif MC.walkD == "u":
                     SH.pos.y = MC.pos.y - 200
                     SH.pos.x = MC.pos.x
                 elif MC.walkD == "d":
@@ -378,7 +385,7 @@ while MC.life >= 0:
                     SH.pos.x = MC.pos.x
                 SH.active = True
                 SH.timeLeft = 0
-                MC.limit += 1
+                MC.limit += 2
                 MC.counter = 0
 
         if evt.type == KEYUP:
@@ -420,19 +427,23 @@ while MC.life >= 0:
     # zombies colliding with each other
     i = 1
     for zombie in zombies:
-        for z2 in range(i,len(zombies)):
+        for z2 in range(i, len(zombies)):
             zombie.collides(zombies[z2], 2, tick)
         i += 1
 
-    # mines vs zombies
+    # mines vs (zombies and main character)
     explode = False
     zIndx = []
     mIndx = []
     for m in range(0, len(mines)):
         for z in range(0, len(zombies)):
-            if mines[m].collides(zombies[z], 3,tick):
+            if mines[m].collides(zombies[z], 3, tick):
                 zIndx.append(zombies[z])
                 explode = True
+
+        if mines[m].collides(MC, 3, tick):
+            explode = True
+
         if explode:
             mIndx.append(mines[m])
             break
@@ -455,20 +466,27 @@ while MC.life >= 0:
 
     # sink hole vs everything else
     for zom in zombies:
-        if SH.collides(zom, 5,tick):
+        if SH.collides(zom, 5, tick):
             zombies.remove(zom)
     for f in fire:
-        if SH.collides(f, 5,tick):
+        if SH.collides(f, 5, tick):
             fire.remove(f)
 
     # Shovel colliding with zombies, fire, mines and sinkhole
-    for z in zombies:
-        MC.collides(z, 1, tick)
-    for f in fire:
-        MC.collides(f, 1, tick)
-    for m in mines:
-        MC.collides(m, 1, tick)
-    MC.collides(SH, 1, tick)
+    if not MC.immune:
+        for z in zombies:
+            MC.collides(z, 1, tick)
+        for f in fire:
+            MC.collides(f, 1, tick)
+        for m in mines:
+            MC.collides(m, 1, tick)
+        MC.collides(SH, 1, tick)
+    elif MC.immune and MC.immune_timer > 0:
+        MC.immune_timer -= tick
+        print('immune timer left:', MC.immune_timer)
+    elif MC.immune and MC.immune_timer <= 0:
+        MC.immune = False
+        MC.immune_timer = 1200
 
     # update and draw zombies
     for zombie in zombies:
