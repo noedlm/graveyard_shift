@@ -41,7 +41,7 @@ class Sprite:
         self.immune_timer = 1200
         self.immune = False
         self.life = 3
-        self.attackT = -1
+        self.attack_timer = -1
         self.attackD = "z"
         self.fTimer = random.random()*1500 + 3000
         self.onFire = False
@@ -135,7 +135,7 @@ class Sprite:
             if y1 > y2 and y1 < y2+h2 or y1+h1 > y2 and y1+h1 < y2+h2:
                 if char == 1:
                     # colliding with zombie
-                    if sp.charType == 2 and self.attackT > 0:
+                    if sp.charType == 2 and self.attack_timer > 0:
                         # zombie on right was hit
                         if self.attackD == "r":
                             if x1+w1-(w1/2) > x2 and x1+w1-(w1/2) < x2+w2 or x1+w1 > x2 and x1+w1 < x2+w2:
@@ -308,7 +308,7 @@ while MC.life >= 0:
         ztime += tick
     
     # time limit in attack
-    if MC.attackT < 0:
+    if MC.attack_timer < 0:
         if MC.type == 1:
             MC.img = MC.W_R
         elif MC.type == 2:
@@ -316,7 +316,7 @@ while MC.life >= 0:
         else:
             MC.img = MC.W_U
     else:
-        MC.attackT = MC.attackT - tick
+        MC.attack_timer = MC.attack_timer - tick
 
     # time limit on sink hole
     if SH.timeLeft > 2000:
@@ -400,26 +400,26 @@ while MC.life >= 0:
                 
             if evt.key == K_UP:
                 MC.img = MC.A_U
-                MC.attackT = 250
+                MC.attack_timer = 250
                 MC.attackD = "u"
                 MC.walkD = "u"
                 MC.type = 3
             elif evt.key == K_RIGHT:
                 MC.img = MC.A_R
                 MC.collides(MC, 1, tick)
-                MC.attackT = 250
+                MC.attack_timer = 250
                 MC.attackD = "r"
                 MC.walkD = "r"
                 MC.type = 1
             elif evt.key == K_DOWN:
                 MC.img = MC.A_D
-                MC.attackT = 250
+                MC.attack_timer = 250
                 MC.attackD = "d"
                 MC.walkD = "d"
                 MC.type = 1
             elif evt.key == K_LEFT:
                 MC.img = MC.A_L
-                MC.attackT = 250
+                MC.attack_timer = 250
                 MC.attackD = "l"
                 MC.walkD = "l"
                 MC.type = 2
